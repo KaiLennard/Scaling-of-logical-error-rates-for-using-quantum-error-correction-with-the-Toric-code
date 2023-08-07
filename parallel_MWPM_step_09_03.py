@@ -81,14 +81,11 @@ def toric_code_z_stabilisers(L):
 
 def toric_code_x_logicals(L):
     H1 = csr_matrix(([1], ([0], [0])), shape=(1, L), dtype=np.uint8)
-    # print('H1:')
-    # print(H1)
+
     H0 = csr_matrix(np.ones((1, L), dtype=np.uint8))
-    # print('H0:')
-    # print(H0)
+
     x_logicals = block_diag([kron(H1, H0), kron(H0, H1)])
-    # print('x_log.data:')
-    # print(x_logicals.data)
+
     x_logicals.data = x_logicals.data % 2
     x_logicals.eliminate_zeros()
     return csr_matrix(x_logicals)
@@ -116,16 +113,6 @@ def num_decoding_failures(Hx_new, Hz_new, x_logicals_new, z_logicals_new, portio
     noiseAll = np.zeros((number_general_errors_new, number_qubits_new))  # creating noise/error matrix
     num_errorsAll = 0  # set error counter to 0
     p_l2_all = []
-    # alphaX = p_*dev
-    # alphaid = dev *(1- p_)
-    # print(np.log((1 - p_) / p_))
-    # print(np.shape(np.full((number_qubits_new), np.log((1 - p_) / p_))))
-
-    # weights_new = np.full((number_qubits_new), np.log((1-p_cal_)/p_cal_)) #compute weights vector with p_cal_
-    # print(np.shape(weights_new))
-
-    # matchingx = Matching(graph=Hz_new, weights=weights_new) #creating matching objects with parity check matrix and weights of qubits
-
     np.random.seed((os.getpid() * int(
         time.time())) % 123456789)  # random seed so that each process computes independent random errors
 
@@ -135,10 +122,10 @@ def num_decoding_failures(Hx_new, Hz_new, x_logicals_new, z_logicals_new, portio
         #p_cal_ = p_
         p_act_ = np.full((number_qubits_new), p_)
         portion_dev_ = portion_
-        num_dev_ = int(np.around(number_qubits_new * portion_dev_, decimals=0))
+        num_dev_ = int(np.around(number_qubits_new * portion_dev_, decimals=0)) # number of minority error rate qubits
         positions = []
         h = 0
-        while h < num_dev_:
+        while h < num_dev_: #here the step function assigns random qubits the minority error rate
             h = h + 1
             pos = np.random.randint(0, number_qubits_new - 1)
 
@@ -147,18 +134,13 @@ def num_decoding_failures(Hx_new, Hz_new, x_logicals_new, z_logicals_new, portio
             else:
                 positions.append(pos)
                 p_act_[pos] = dev
-        p_cal_= p_act_
+        p_cal_= p_act_ #no calibrational mismatch is considered
         weights_new = np.full((number_qubits_new), np.log((1 - p_cal_) / p_cal_))  # compute weights vector with p_cal_
-        # print(np.shape(weights_new))
 
         matchingx = Matching(graph=Hz_new,
                              weights=weights_new)  # creating matching objects with parity check matrix and weights of qubits
 
         noiseAll[1, :] = np.random.binomial(1, p_act_, Hz_new.shape[1])
-        # print(p_act_)# fill in error X vector with probability p_act_
-        # print(noiseAll[1,:])
-        # dectect X error using Z stabilizer
-
         syndromex = (Hz_new @ noiseAll[1, :]) % 2  # compute syndrome by matrix multi. of Hz and noise/error vector
 
         correctionx = matchingx.decode(z=syndromex, num_neighbours=None)  # decode computes corrections
@@ -178,22 +160,15 @@ def log_result(result):
 
 
 if __name__ == '__main__':
-    """21.06.2023"""
     start = time.time()  # measure time
 
     num_trials = 1e5  # number of repetitions
     print("num_trials = " + str(num_trials))
-    deviation = [0.30]  # deviation of gauss for probability
+    deviation = [0.30]  #minority error rate
     #Ls = range(5, 24, 2)  # lattice size
-    Ls = [5, 15, 25, 35, 45, 55]
-    # ps = [0.01,0.02,0.03,0.035,0.04,0.045,0.05,0.055,0.06,0.065,0.07,0.075,0.08,0.085,0.09,0.1,0.11] #probabilities around the threshold where all qubits have the same error rate within a lattice of size L
-    # ps = np.arange(0.05,0.12,0.005)
-    # ps = np.around(ps,5)
-    portion = [0.02,0.04,0.06,0.08,0.1,0.12,0.16,0.18,0.2,0.22,0.24,0.26,0.3,0.32,0.34,0.36,0.38,0.40,0.42,0.44,0.46,0.48, 0.5, 0.52]
-    Ps = [0.09]
-    # print(ps[2])
-    #print(np.shape(p))
-    #print(p)
+    Ls = [5, 15, 25, 35, 45, 55] #lattice size
+    portion = [0.02,0.04,0.06,0.08,0.1,0.12,0.16,0.18,0.2,0.22,0.24,0.26,0.3,0.32,0.34,0.36,0.38,0.40,0.42,0.44,0.46,0.48, 0.5, 0.52] #minority portions
+    Ps = [0.09] #majority error rate
     np.random.seed(2)
 
     number_errors = 2  # kinds of errors (if two only id and X errors appear)
@@ -238,13 +213,10 @@ if __name__ == '__main__':
                         trial_start = int(
                             proc * num_trials / number_processes)  # the num_trials are computed by parallel processes, where each process computes a equal number of trials
                         trial_end = int((proc + 1) * num_trials / number_processes)
-                        # print("here before aply async")
 
                         pool.apply_async(num_decoding_failures, args=(
                         Hx, Hz, logX, logZ, por, p, number_of_Qubits, number_errors, trial_start, trial_end, dev),
                                          callback=log_result)  # the parallel processing command, callback calls the function log_results so each process saves its result independently but in the same array
-                        # print(remain_errors)
-
                         #print(sum(num_decoding_failures(Hx, Hz, logX, logZ, por, p, number_of_Qubits, number_errors, trial_start, trial_end, dev)))
                     pool.close()
                     pool.join()  # close all parallel processes
@@ -264,7 +236,6 @@ if __name__ == '__main__':
                 log_errors_all_L_sqrt.append(np.array(log_errors_sqrt))  # logical error rate for each L is saved
                 log_errors_all_L_sum.append(np.array(log_errors_sum))
                 log_errors_all_L_norm.append(np.array(log_errors_norm))
-                # print(log_errors_all_L)
                 end_L = time.time()
                 print("time for (L = " + str(L) + ") = " + str((end_L - start_L) / 60))
 
