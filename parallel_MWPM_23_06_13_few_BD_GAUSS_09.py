@@ -27,7 +27,7 @@ def square_elements_list(list1):
     result = []
     for i in range(0, len(list1)):
         j = i - 1
-        # print("element of list ",j, len(list1))
+
         result.append(list1[j] * list1[j])
     return result
 
@@ -36,18 +36,15 @@ def repetition_code(n):
     """
     Parity check matrix of a repetition code with length n.
     """
-    # print('here')
+
     row_ind, col_ind = zip(*((i, j)
                              for i in range(n)
                              for j in (i, (i + 1) % n)))
-    # print(row_ind,col_ind)
-    # print("new")
 
     data = np.ones(2 * n, dtype=np.uint8)
-    # print(data)
-    # return csr_matrix((data, (row_ind, col_ind)), shape = (n,n)).toarray()
+
     return csr_matrix((data, (row_ind, col_ind)), shape=(n, n)).toarray()
-    # without the shape part
+
 
 
 def toric_code_x_stabilisers(L):
@@ -57,9 +54,7 @@ def toric_code_x_stabilisers(L):
     two repetition codes.
     """
     Hr = repetition_code(L)
-    # print(Hr.shape())
-    # print(Hr)
-    # print('toric')
+
 
     Hx = hstack(
         [kron(Hr, eye(Hr.shape[1])), kron(eye(Hr.shape[0]), Hr.T)],
@@ -89,14 +84,11 @@ def toric_code_z_stabilisers(L):
 
 def toric_code_x_logicals(L):
     H1 = csr_matrix(([1], ([0], [0])), shape=(1, L), dtype=np.uint8)
-    # print('H1:')
-    # print(H1)
+
     H0 = csr_matrix(np.ones((1, L), dtype=np.uint8))
-    # print('H0:')
-    # print(H0)
+
     x_logicals = block_diag([kron(H1, H0), kron(H0, H1)])
-    # print('x_log.data:')
-    # print(x_logicals.data)
+
     x_logicals.data = x_logicals.data % 2
     x_logicals.eliminate_zeros()
     return csr_matrix(x_logicals)
@@ -121,12 +113,12 @@ def get_error_prop(number_general_errors, p, number_qubits):
 def num_decoding_failures(Hx_new, Hz_new, x_logicals_new, z_logicals_new, dev_, p_, number_qubits_new,
                           number_general_errors_new, j_start, j_end, p_act_m, p_cal_m):
     # do not forget number of error types here
-    noiseAll = np.zeros((number_general_errors_new, number_qubits_new))  # creating noise/error matrix
+    noiseAll = np.zeros((number_general_errors_new, number_qubits_new))  # creating error matrix
     num_errorsAll = 0  # set error counter to 0
     p_l2_all = []
 
     np.random.seed((os.getpid() * int(
-        time.time())) % 123456789)  # random seed so that each process computes independent random errors
+        time.time())) % 123456789)  # random seed so that each process computes independent random errors very important for multiprocessing
 
     for j in range(j_start, j_end):
         # X errors
@@ -139,9 +131,6 @@ def num_decoding_failures(Hx_new, Hz_new, x_logicals_new, z_logicals_new, dev_, 
                              weights=weights_new)  # creating matching objects with parity check matrix and weights of qubits
 
         noiseAll[1, :] = np.random.binomial(1, p_act_, Hz_new.shape[1])
-        # print(p_act_)# fill in error X vector with probability p_act_
-        # print(noiseAll[1,:])
-        # dectect X error using Z stabilizer
 
         syndromex = (Hz_new @ noiseAll[1, :]) % 2  # compute syndrome by matrix multi. of Hz and noise/error vector
 
@@ -177,7 +166,6 @@ if __name__ == '__main__':
     print("number of processes/cores = " + str(number_processes))
     for p in Ps:
         print(p, "==== new error rate p ####")
-        #print("+++++++++++++++++++++++++++++++++++ dev=" + str(dev))
         start_dev = time.time()
         log_errors_all_L_sum = []
         log_errors_all_L_norm = []
@@ -225,15 +213,11 @@ if __name__ == '__main__':
                                      callback=log_result)  # the parallel processing command, callback calls the function log_results so each process saves its result independently but in the same array
                     # print(remain_errors)
 
-            #print(sum(num_decoding_failures(Hx, Hz, logX, logZ, por, p, number_of_Qubits, number_errors, trial_start, trial_end, dev)))
+                #print(sum(num_decoding_failures(Hx, Hz, logX, logZ, por, p, number_of_Qubits, number_errors, trial_start, trial_end, dev)))
                 pool.close()
                 pool.join()  # close all parallel processes
                 print(str(sum(remain_errors)) + "  = remain errors         ")
 
-                #print("squared elements = ", square_elements_list(remain_errors))
-                #print("sum = ", sum(square_elements_list(remain_errors)))
-                #print("normal = ", sum(remain_errors) / num_trials)
-                #print("sqrt (sum) = ", np.sqrt(sum(square_elements_list(remain_errors))))
 
                 log_errors_sqrt.append(np.sqrt(sum(square_elements_list(
                     remain_errors))) / num_trials)  # logical error rate is saved for each p is saved
