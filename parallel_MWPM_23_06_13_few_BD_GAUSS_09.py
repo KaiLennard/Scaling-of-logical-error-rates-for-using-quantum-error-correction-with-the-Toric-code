@@ -211,6 +211,7 @@ if __name__ == '__main__':
                 pool = Pool()  # create pool for parallel processes
                 p_cal = create_gauss_p_matrix(p, dev, num_trials, number_of_Qubits) # initiate calibrational error rate
                 p_act = create_gauss_p_matrix(p, dev, num_trials, number_of_Qubits) # initiate actual error rate
+                #right now both are truncated Gaussian distributed by differently
 
                 print("p=", p, " L = ", L, " dev = ", dev, "of ", deviation[len(deviation) - 1])
                 for proc in range(number_processes):
