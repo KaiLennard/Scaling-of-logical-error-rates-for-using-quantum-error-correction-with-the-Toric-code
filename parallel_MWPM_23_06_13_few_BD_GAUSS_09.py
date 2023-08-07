@@ -124,15 +124,6 @@ def num_decoding_failures(Hx_new, Hz_new, x_logicals_new, z_logicals_new, dev_, 
     noiseAll = np.zeros((number_general_errors_new, number_qubits_new))  # creating noise/error matrix
     num_errorsAll = 0  # set error counter to 0
     p_l2_all = []
-    # alphaX = p_*dev
-    # alphaid = dev *(1- p_)
-    # print(np.log((1 - p_) / p_))
-    # print(np.shape(np.full((number_qubits_new), np.log((1 - p_) / p_))))
-
-    # weights_new = np.full((number_qubits_new), np.log((1-p_cal_)/p_cal_)) #compute weights vector with p_cal_
-    # print(np.shape(weights_new))
-
-    # matchingx = Matching(graph=Hz_new, weights=weights_new) #creating matching objects with parity check matrix and weights of qubits
 
     np.random.seed((os.getpid() * int(
         time.time())) % 123456789)  # random seed so that each process computes independent random errors
@@ -171,24 +162,17 @@ def log_result(result):
 
 
 if __name__ == '__main__':
-    """26.06.2023"""
     start = time.time()  # measure time
 
     num_trials = 1e5  # number of repetitions
     print("num_trials = " + str(num_trials))
-    deviation = [0.001, 0.01,0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25]  # deviation of gauss for probability
+    deviation = [0.001, 0.01,0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25]  # deviation of truncated Gaussian fct
     #Ls = range(5, 24, 2)  # lattice size
-    Ls = [5, 15, 25, 35, 45, 55]
-    # ps = [0.01,0.02,0.03,0.035,0.04,0.045,0.05,0.055,0.06,0.065,0.07,0.075,0.08,0.085,0.09,0.1,0.11] #probabilities around the threshold where all qubits have the same error rate within a lattice of size L
-    # ps = np.arange(0.05,0.12,0.005)
-    # ps = np.around(ps,5)
-    Ps = [0.09]
-    # print(ps[2])
-    #print(np.shape(p))
-    #print(p)
+    Ls = [5, 15, 25, 35, 45, 55] #lattice size
+    Ps = [0.09] #theoretical mean error rate
     np.random.seed(2)
 
-    number_errors = 2  # kinds of errors (if two only id and X errors appear)
+    number_errors = 2  # kinds of errors (if two, only id and X errors appear)
     number_processes = 50  # multiprocessing.cpu_count()
     print("number of processes/cores = " + str(number_processes))
     for p in Ps:
@@ -225,8 +209,8 @@ if __name__ == '__main__':
                 remain_errors = []
                 #print("portion = ", por)
                 pool = Pool()  # create pool for parallel processes
-                p_cal = create_gauss_p_matrix(p, dev, num_trials, number_of_Qubits)
-                p_act = create_gauss_p_matrix(p, dev, num_trials, number_of_Qubits)
+                p_cal = create_gauss_p_matrix(p, dev, num_trials, number_of_Qubits) # initiate calibrational error rate
+                p_act = create_gauss_p_matrix(p, dev, num_trials, number_of_Qubits) # initiate actual error rate
 
                 print("p=", p, " L = ", L, " dev = ", dev, "of ", deviation[len(deviation) - 1])
                 for proc in range(number_processes):
